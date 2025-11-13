@@ -9,113 +9,159 @@ let block_array = [[1,1,1,1,1,1,1,1,1,1],
                [1,0,0,0,0,0,0,0,0,1],
                [1,1,1,1,1,1,1,1,1,1]];
 
-let start_coord = [5,5];
-let player_facing = 0;
+let playerCoords = [5,5];
+let playerFacing = 0;
 let scale = 40;
+const FIELDOFVIEW = 60;
 
-let canvas_grid = document.getElementById("grid")
-let canvas_display = document.getElementById("display");
 
-let grid_ctx = canvas_grid.getContext("2d");
-let display_ctx = canvas_display.getContext("2d");
+let canvasGrid = document.getElementById("grid")
+let canvasDisplay = document.getElementById("display");
+
+let gridCtx = canvasGrid.getContext("2d");
+let displayCtx = canvasDisplay.getContext("2d");
+
+let toRadians = (degrees) => {
+    return degrees * Math.PI/180;
+} 
 
 let clearcanvas = () => {
-    grid_ctx.clearRect(0, 0, 400, 400);
+    gridCtx.clearRect(0, 0, 400, 400);
 }
 
-let draw_player = () => {
-    grid_ctx.fillStyle = 'red'; 
-    grid_ctx.fillRect((start_coord[0]*scale + 15), (start_coord[1]*scale + 15), 10, 10);
+let drawPlayer = () => {
+    gridCtx.fillStyle = 'red'; 
+    gridCtx.fillRect((playerCoords[0]*scale + 15), (playerCoords[1]*scale + 15), 10, 10);
 }
 
-let draw_block = (x, y) => {
-    grid_ctx.fillStyle = 'grey'; 
-    grid_ctx.fillRect((x*scale)+1, (y*scale)+1, 38, 38);
+let drawBlock = (x, y) => {
+    gridCtx.fillStyle = 'grey'; 
+    gridCtx.fillRect((x*scale)+1, (y*scale)+1, 38, 38);
 }
 
-let draw_facing = () => {
-    const startx = start_coord[0]*scale + 20
-    const starty = start_coord[1]*scale + 20
-    const endx = startx +20 * Math.cos(player_facing)
-    const endy = starty +20 * Math.sin(player_facing);
-    grid_ctx.beginPath();
-    grid_ctx.moveTo(startx, starty);
-    grid_ctx.lineTo(endx, endy);
-    grid_ctx.stroke();
+let drawFacing = () => {
+    const startx = playerCoords[0]*scale + 20;
+    const starty = playerCoords[1]*scale + 20;
+    const endx = startx +20 * Math.cos(playerFacing);
+    const endy = starty +20 * Math.sin(playerFacing);
+    gridCtx.beginPath();
+    gridCtx.moveTo(startx, starty);
+    gridCtx.lineTo(endx, endy);
+    gridCtx.stroke();
 
 }
 
-let draw_layout = () => {
+let drawLayout = () => {
     for (let x = 0; x < 10; x++){
         for (let y = 0; y < 10; y++){
             if (block_array[y][x] == 1){
-                draw_block(x,y);
+                drawBlock(x,y);
             }
         }
     }
 }
 
-draw_player();
-draw_facing();
-draw_layout();
+
+//cast (and draw) a single ray at the given angle
+let drawRay = (angle) => {
+    sinFacing = Math.sin(angle);
+    cosFacing = Math.cos(angle);
+    let depth = 1;
+    let rayX, rayY = 0;
+    while (depth < 100) {
+        rayX = playerCoords[0] + cosFacing * depth
+        rayY = playerCoords[1] + sinFacing * depth
+        if (block_array[Math.round(rayY)][Math.round(rayX)] == 1) {
+            console.log(depth)
+            gridCtx.strokeStyle = 'green'; 
+            gridCtx.beginPath();
+            gridCtx.moveTo(playerCoords[0]*scale + 0.5*scale, playerCoords[1]*scale + 0.5*scale);
+            gridCtx.lineTo(rayX*scale + 0.5*scale, rayY*scale + 0.5*scale);
+            gridCtx.stroke();
+            depth = 100;
+        }
+        depth ++;
+    }
+}
+
+let drawRays = () => {
+    for (let adjust = - 0.5* FIELDOFVIEW; adjust <= 0.5 * FIELDOFVIEW; adjust ++) {
+        let rayAngle = toRadians(adjust) + playerFacing;
+        console.log(rayAngle)
+        if (rayAngle > 6.28318) {
+            rayAngle -= 6.28318
+        } else if (rayAngle < 0) {
+            rayAngle += 6.28318
+        }
+        drawRay(rayAngle);
+    }
+}
+
+
+drawPlayer();
+drawFacing();
+drawLayout();
+drawRays();
 
 document.addEventListener("keydown", (event) => {
     switch (event.key) {
         case "ArrowUp":
-            switch (player_facing) {
+            switch (playerFacing) {
                 case 0:
-                    start_coord[0] < 8 ? start_coord[0] += 1 : start_coord[0] = 8;
+                    playerCoords[0] < 8 ? playerCoords[0] += 1 : playerCoords[0] = 8;
                     break;
                 case Math.PI*1.5:
-                    start_coord[1] > 1 ? start_coord[1] -= 1 : start_coord[1] = 1;
+                    playerCoords[1] > 1 ? playerCoords[1] -= 1 : playerCoords[1] = 1;
                     break;
                 case Math.PI:
-                    start_coord[0] > 1 ? start_coord[0] -= 1 : start_coord[0] = 1;
+                    playerCoords[0] > 1 ? playerCoords[0] -= 1 : playerCoords[0] = 1;
                     break;
                 case Math.PI/2:
-                    start_coord[1] < 8 ? start_coord[1] += 1 : start_coord[1] = 8;
+                    playerCoords[1] < 8 ? playerCoords[1] += 1 : playerCoords[1] = 8;
                     break;
             }
             clearcanvas();
-            draw_player();
-            draw_layout();
-            draw_facing();
+            drawPlayer();
+            drawLayout();
+            drawFacing();
+            drawRays();
             break;
         case "ArrowDown":
-             switch (player_facing) {
+             switch (playerFacing) {
                 case 0:
-                    start_coord[0] > 1 ? start_coord[0] -= 1 : start_coord[0] = 1;   
+                    playerCoords[0] > 1 ? playerCoords[0] -= 1 : playerCoords[0] = 1;   
                     break;
                 case Math.PI*1.5:
-                    start_coord[1] < 8 ? start_coord[1] += 1 : start_coord[1] = 8;
+                    playerCoords[1] < 8 ? playerCoords[1] += 1 : playerCoords[1] = 8;
                     break;
                 case Math.PI:
-                    start_coord[0] < 8 ? start_coord[0] += 1 : start_coord[0] = 8;
+                    playerCoords[0] < 8 ? playerCoords[0] += 1 : playerCoords[0] = 8;
                     break;
                 case Math.PI/2:
-                    start_coord[1] > 1 ? start_coord[1] -= 1 : start_coord[1] = 1;
+                    playerCoords[1] > 1 ? playerCoords[1] -= 1 : playerCoords[1] = 1;
                     break;
             }
             clearcanvas();
-            draw_player();
-            draw_layout();
-            draw_facing();
+            drawPlayer();
+            drawLayout();
+            drawFacing();
+            drawRays();
             break;
         case "ArrowLeft":
-            player_facing == 0 ? player_facing = 1.5 * Math.PI : player_facing -= Math.PI/2;
+            playerFacing == 0 ? playerFacing = 1.5 * Math.PI : playerFacing -= Math.PI/2;
             clearcanvas();
-            draw_player();
-            draw_layout();
-            draw_facing();
-            console.log(player_facing)
+            drawPlayer();
+            drawLayout();
+            drawFacing();
+            drawRays();
             break;
         case "ArrowRight":
-            player_facing == 1.5 * Math.PI ? player_facing = 0 : player_facing += Math.PI/2;
+            playerFacing == 1.5 * Math.PI ? playerFacing = 0 : playerFacing += Math.PI/2;
             clearcanvas();
-            draw_player();
-            draw_layout();
-            draw_facing();
-            console.log(player_facing)
+            drawPlayer();
+            drawLayout();
+            drawFacing();
+            drawRays();
             break;
     }
  })
