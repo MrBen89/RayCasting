@@ -12,7 +12,10 @@ let block_array = [[1,1,1,1,1,1,1,1,1,1],
 let playerCoords = [5,5];
 let playerFacing = 0;
 let scale = 40;
+let steps = 180;
 const FIELDOFVIEW = 60;
+const DISPLAYWIDTH = 180;
+const DISPLAYHEIGHT = 144;
 
 
 let canvasGrid = document.getElementById("grid")
@@ -21,12 +24,14 @@ let canvasDisplay = document.getElementById("display");
 let gridCtx = canvasGrid.getContext("2d");
 let displayCtx = canvasDisplay.getContext("2d");
 
+
 let toRadians = (degrees) => {
     return degrees * Math.PI/180;
 } 
 
 let clearcanvas = () => {
     gridCtx.clearRect(0, 0, 400, 400);
+    displayCtx.clearRect(0, 0, DISPLAYWIDTH, DISPLAYHEIGHT);
 }
 
 let drawPlayer = () => {
@@ -63,7 +68,7 @@ let drawLayout = () => {
 
 
 //cast (and draw) a single ray at the given angle
-let drawRay = (angle) => {
+let drawRay = (angle, adjust) => {
     sinFacing = Math.sin(angle);
     cosFacing = Math.cos(angle);
     let depth = 1;
@@ -72,29 +77,42 @@ let drawRay = (angle) => {
         rayX = playerCoords[0] + cosFacing * depth
         rayY = playerCoords[1] + sinFacing * depth
         if (block_array[Math.round(rayY)][Math.round(rayX)] == 1) {
-            console.log(depth)
             gridCtx.strokeStyle = 'green'; 
             gridCtx.beginPath();
             gridCtx.moveTo(playerCoords[0]*scale + 0.5*scale, playerCoords[1]*scale + 0.5*scale);
             gridCtx.lineTo(rayX*scale + 0.5*scale, rayY*scale + 0.5*scale);
             gridCtx.stroke();
+            renderLine(angle, depth, adjust);
             depth = 100;
         }
-        depth ++;
+        depth += 0.1;
     }
 }
 
 let drawRays = () => {
-    for (let adjust = - 0.5* FIELDOFVIEW; adjust <= 0.5 * FIELDOFVIEW; adjust ++) {
+    for (let count = 0; count < steps; count ++) {
+    // (let adjust = - 0.5* FIELDOFVIEW; adjust <= 0.5 * FIELDOFVIEW; adjust ++) {
+        let range = FIELDOFVIEW / steps
+        let adjust = -0.5 * FIELDOFVIEW + count * range
         let rayAngle = toRadians(adjust) + playerFacing;
-        console.log(rayAngle)
         if (rayAngle > 6.28318) {
             rayAngle -= 6.28318
         } else if (rayAngle < 0) {
             rayAngle += 6.28318
         }
-        drawRay(rayAngle);
+        drawRay(rayAngle, count);
     }
+}
+
+let renderLine = (angle, distance, x) => {
+    let wallHeightConst = DISPLAYHEIGHT * 0.8;
+    let renderHeight = wallHeightConst / distance; 
+    console.log(renderHeight);
+    displayCtx.strokeStyle = 'green'; 
+    displayCtx.beginPath();
+    displayCtx.moveTo(x, 0.5* DISPLAYHEIGHT - 0.5 * renderHeight);
+    displayCtx.lineTo(x, 0.5* DISPLAYHEIGHT + 0.5 * renderHeight);
+    displayCtx.stroke();
 }
 
 
