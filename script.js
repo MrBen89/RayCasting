@@ -1,19 +1,19 @@
-let block_array = [[1,1,1,1,1,1,1,1,1,1],
-               [1,0,0,0,0,0,0,0,0,1],
-               [1,0,0,0,0,0,0,0,0,1],
-               [1,0,0,0,0,0,0,0,0,1],
-               [1,0,0,0,0,0,0,0,0,1],
-               [1,0,0,0,1,0,0,0,0,1],
-               [1,0,0,0,0,0,0,0,0,1],
-               [1,0,0,0,0,0,0,0,0,1],
-               [1,0,0,0,0,0,0,0,0,1],
-               [1,1,1,1,1,1,1,1,1,1]];
+let blockArray =  [[1,1,1,1,1,1,1,1,1,1],
+                    [1,0,0,0,0,0,0,1,0,1],
+                    [1,0,0,0,0,0,0,1,0,1],
+                    [1,0,0,0,1,1,1,1,0,1],
+                    [1,0,0,0,1,0,0,0,0,1],
+                    [1,0,0,0,1,0,0,0,0,1],
+                    [1,0,0,0,0,0,0,0,0,1],
+                    [1,0,0,0,0,0,0,0,0,1],
+                    [1,0,0,0,0,0,0,0,0,1],
+                    [1,1,1,1,1,1,1,1,1,1]];
 
 let playerCoords = [5,5];
 let playerFacing = 0;
 let scale = 40;
 let steps = 180;
-const FIELDOFVIEW = 60;
+const FIELDOFVIEW = 90;
 const DISPLAYWIDTH = 180;
 const DISPLAYHEIGHT = 144;
 
@@ -23,6 +23,10 @@ let canvasDisplay = document.getElementById("display");
 
 let gridCtx = canvasGrid.getContext("2d");
 let displayCtx = canvasDisplay.getContext("2d");
+
+let checkCollison = (xCoord, yCoord) => {
+    return (blockArray[yCoord][xCoord] == 1 ? true : false)
+}
 
 
 let toRadians = (degrees) => {
@@ -59,7 +63,7 @@ let drawFacing = () => {
 let drawLayout = () => {
     for (let x = 0; x < 10; x++){
         for (let y = 0; y < 10; y++){
-            if (block_array[y][x] == 1){
+            if (blockArray[y][x] == 1){
                 drawBlock(x,y);
             }
         }
@@ -71,44 +75,44 @@ let drawLayout = () => {
 let drawRay = (angle, adjust) => {
     sinFacing = Math.sin(angle);
     cosFacing = Math.cos(angle);
-    let depth = 1;
-    let rayX, rayY = 0;
+    let depth = 0.01;
+    let rayX = 0, rayY = 0;
     while (depth < 100) {
         rayX = playerCoords[0] + cosFacing * depth
         rayY = playerCoords[1] + sinFacing * depth
-        if (block_array[Math.round(rayY)][Math.round(rayX)] == 1) {
+        if (blockArray[Math.round(rayY)][Math.round(rayX)] == 1) {
             gridCtx.strokeStyle = 'green'; 
             gridCtx.beginPath();
             gridCtx.moveTo(playerCoords[0]*scale + 0.5*scale, playerCoords[1]*scale + 0.5*scale);
             gridCtx.lineTo(rayX*scale + 0.5*scale, rayY*scale + 0.5*scale);
             gridCtx.stroke();
             renderLine(angle, depth, adjust);
-            depth = 100;
+            break;
         }
-        depth += 0.1;
+        depth += 0.01;
     }
 }
 
 let drawRays = () => {
     for (let count = 0; count < steps; count ++) {
-    // (let adjust = - 0.5* FIELDOFVIEW; adjust <= 0.5 * FIELDOFVIEW; adjust ++) {
         let range = FIELDOFVIEW / steps
         let adjust = -0.5 * FIELDOFVIEW + count * range
         let rayAngle = toRadians(adjust) + playerFacing;
-        if (rayAngle > 6.28318) {
-            rayAngle -= 6.28318
+        if (rayAngle > 2 * Math.PI) {
+            rayAngle -= 2 * Math.PI
         } else if (rayAngle < 0) {
-            rayAngle += 6.28318
+            rayAngle += 2 * Math.PI
         }
         drawRay(rayAngle, count);
     }
 }
 
 let renderLine = (angle, distance, x) => {
-    let wallHeightConst = DISPLAYHEIGHT * 0.8;
-    let renderHeight = wallHeightConst / distance; 
-    console.log(renderHeight);
-    displayCtx.strokeStyle = 'green'; 
+    let correctedDepth = distance * Math.cos(angle - playerFacing);
+    if (correctedDepth <= 0) correctedDepth = 0.0001;
+    let wallHeightConst = DISPLAYHEIGHT * 1.0;
+    let renderHeight = wallHeightConst / correctedDepth;
+    displayCtx.strokeStyle = 'grey'; 
     displayCtx.beginPath();
     displayCtx.moveTo(x, 0.5* DISPLAYHEIGHT - 0.5 * renderHeight);
     displayCtx.lineTo(x, 0.5* DISPLAYHEIGHT + 0.5 * renderHeight);
@@ -126,16 +130,16 @@ document.addEventListener("keydown", (event) => {
         case "ArrowUp":
             switch (playerFacing) {
                 case 0:
-                    playerCoords[0] < 8 ? playerCoords[0] += 1 : playerCoords[0] = 8;
+                    if (!checkCollison((playerCoords[0] + 1), playerCoords[1])) playerCoords[0] += 1;
                     break;
                 case Math.PI*1.5:
-                    playerCoords[1] > 1 ? playerCoords[1] -= 1 : playerCoords[1] = 1;
+                    if (!checkCollison((playerCoords[0]), playerCoords[1] -1)) playerCoords[1] -= 1;
                     break;
                 case Math.PI:
-                    playerCoords[0] > 1 ? playerCoords[0] -= 1 : playerCoords[0] = 1;
+                    if (!checkCollison((playerCoords[0] - 1), playerCoords[1])) playerCoords[0] -= 1;
                     break;
                 case Math.PI/2:
-                    playerCoords[1] < 8 ? playerCoords[1] += 1 : playerCoords[1] = 8;
+                    if (!checkCollison((playerCoords[0]), playerCoords[1] +1)) playerCoords[1] += 1;
                     break;
             }
             clearcanvas();
@@ -147,16 +151,16 @@ document.addEventListener("keydown", (event) => {
         case "ArrowDown":
              switch (playerFacing) {
                 case 0:
-                    playerCoords[0] > 1 ? playerCoords[0] -= 1 : playerCoords[0] = 1;   
+                    if (!checkCollison((playerCoords[0] - 1), playerCoords[1])) playerCoords[0] -= 1;   
                     break;
                 case Math.PI*1.5:
-                    playerCoords[1] < 8 ? playerCoords[1] += 1 : playerCoords[1] = 8;
+                    if (!checkCollison((playerCoords[0]), playerCoords[1] +1)) playerCoords[1] += 1;
                     break;
                 case Math.PI:
-                    playerCoords[0] < 8 ? playerCoords[0] += 1 : playerCoords[0] = 8;
+                    if (!checkCollison((playerCoords[0] + 1), playerCoords[1])) playerCoords[0] += 1;
                     break;
                 case Math.PI/2:
-                    playerCoords[1] > 1 ? playerCoords[1] -= 1 : playerCoords[1] = 1;
+                    if (!checkCollison((playerCoords[0]), playerCoords[1] -1)) playerCoords[1] -= 1;
                     break;
             }
             clearcanvas();
