@@ -13,7 +13,7 @@ let playerCoords = [5,5];
 let playerFacing = 0;
 let scale = 40;
 let steps = 180;
-const FIELDOFVIEW = 90;
+const FIELDOFVIEW = 120;
 const DISPLAYWIDTH = 180;
 const DISPLAYHEIGHT = 144;
 
@@ -112,7 +112,8 @@ let renderLine = (angle, distance, x) => {
     if (correctedDepth <= 0) correctedDepth = 0.0001;
     let wallHeightConst = DISPLAYHEIGHT * 1.0;
     let renderHeight = wallHeightConst / correctedDepth;
-    displayCtx.strokeStyle = 'grey'; 
+    let shade = Math.max(0, 255 - correctedDepth * 20); 
+    displayCtx.strokeStyle = `rgb(${shade}, ${shade}, ${shade})`;
     displayCtx.beginPath();
     displayCtx.moveTo(x, 0.5* DISPLAYHEIGHT - 0.5 * renderHeight);
     displayCtx.lineTo(x, 0.5* DISPLAYHEIGHT + 0.5 * renderHeight);
